@@ -1,0 +1,160 @@
+---
+title: "Assignment1 - Mary Alexandra Garcia"
+ID: 100391387
+date: "2023-06-04"
+output: pdf_document
+---
+
+**POINT 1:
+
+## a. Dissimilarity matrix:
+
+-> Creating the matrix:
+```{r}
+st1 <- c(0, 1, 1, 0, 0)
+st2 <- c(1, 1, 0, 0, 0)
+st3 <- c(0, 0, 1, 1, 1)
+st4 <- c(0, 1, 1, 1, 1)
+st5 <- c(1, 0, 0, 1, 1)
+st6 <- c(0, 1, 0, 1, 0)
+```
+
+```{r}
+students <- rbind(st1, st2, st3, st4, st5, st6)
+students
+```
+```{r}
+str(students)
+```
+
+```{r}
+class(students)
+```
+-> Calculating the dice distance:
+```{r}
+library(cluster)
+dice_dis <- daisy(students, metric = 'gower')
+dice_dis
+```
+
+## B. Which two students are least similar? How do you tell?
+
+There is a tie between the two least similar students between students 1 and 5 and students 2 and 3 which have a higher score equal to 1 based on the result of the dissimilarity matrix.
+
+```{r}
+library(factoextra)
+fviz_dist(dice_dis)
+```
+
+## C. By using the PAM() function in R, divide these 6 students into two relatively homegenous subgroups (clusters) based on the dis(similarity) numbers calculated in part (a). How will you form the two subgroups?
+
+```{r}
+pam.res <- pam(dice_dis, 2) # 2 = clusters
+pam.res
+```
+
+```{r}
+#Accessing to the clusters' medoids:
+pam.res$medoids
+```
+
+```{r}
+#Verifying the clusters' numbers:
+head(pam.res$clustering)
+```
+For this students' matrix, we have two clusters that are distributed as follows:
+
+Cluster 1: Students 1, 2, 6(medoid)
+Cluster 2: Students 3(medoid), 4, 5
+
+**POINT 2:
+
+-> Reading the dataframes to try the function:
+```{r}
+iris <- read.csv('iris.csv')
+iris <- iris[, -c(5)]
+head(iris)
+```
+
+```{r}
+usa <- read.csv('USArrests.csv')
+head(usa)
+```
+
+```{r}
+rownames(usa) <- usa$X
+usar <- usa[c(2:5)]
+head(usar)
+```
+
+
+
+```{r}
+#Creating the function:
+
+elbow_k <- function(df){
+  ncol <- ncol(df) #Number of columns of the datafame
+  degree_f <- (nrow(df) - 1) # Calculating the degrees of freedom
+  df_var <- sum(apply(df, 2, var)) # Calculating the total variance of the dataframe
+  wss <- numeric(ncol) # Empty vector with the same length of the dataset columns to store the                            Within Sum Square (wss) result.
+  wss[1] <- degree_f * df_var # Calculating the total within-cluster sum of squares (wss) and                                   store them in the first column of wss 
+  
+  for (x in 2:ncol){
+    wss[x] <- sum(kmeans(df, centers = x)$withinss) #Iterating to calculate the wss for each                                                         cluster from 2 to the number of columns
+  }
+  wss_change <- diff(wss) # Rate of change between the wss elements
+  elbow_index <- which.max(wss_change) + 1 # Detecting the max difference between the wss values                                              and adding one element
+  optimal_clusters <- elbow_index # Returning the optimal number of clusters
+  return(optimal_clusters)
+}
+```
+
+```{r}
+optimal_clusters <- elbow_k(usar)
+optimal_clusters
+```
+
+```{r}
+optimal_clusters <- elbow_k(iris)
+optimal_clusters
+```
+-> Plotting the Usarrests dataframe:
+
+a. Applying PCA to the numerical variables:
+```{r}
+usa.pca <- prcomp(usar, scale. = TRUE)
+usa.res <- data.frame(usa.pca$x)
+head(usa.res)
+```
+
+```{r}
+# Applying the k-means clustering:
+set.seed(123)
+km.res <- kmeans(usa.res, 4, nstart = 25)
+km.res
+```
+
+
+```{r}
+km.res$cluster
+```
+```{r}
+km.res$tot.withinss
+```
+```{r}
+km.res$size
+```
+
+```{r}
+library(factoextra)
+fviz_cluster(km.res, data = usar,
+             palette = c("#61D04F", "#2297E6", "#28E2E5", "#CD0BBC"),
+             ellipse.type = "euclid",
+             star.plot = TRUE,
+             repel = TRUE,
+             ggtheme = theme_minimal()
+)
+```
+
+
+
